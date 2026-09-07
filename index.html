@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Transnet Connect — Stakeholder Intelligence Platform</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand-lockup">
+        <div class="brand-mark">TN</div>
+        <div>
+          <div class="brand-name">TRANSNET <span style="color:#7DBE00">CONNECT</span></div>
+          <div class="brand-sub">Stakeholder Management Connector</div>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Primary">
+        <button class="nav-item active" data-view="dashboard"><span>▦</span> Dashboard</button>
+        <button class="nav-item" data-view="intake"><span>＋</span> New Intake</button>
+        <button class="nav-item" data-view="cases"><span>☷</span> Cases</button>
+        <button class="nav-item" data-view="stakeholders"><span>◉</span> Stakeholders</button>
+        <button class="nav-item" data-view="questionnaire"><span>✓</span> Questionnaire</button>
+        <button class="nav-item" data-view="intelligence"><span>◌</span> Intelligence</button>
+        <button class="nav-item" data-view="reports"><span>▤</span> Reports</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="status-dot-wrap"><span class="status-dot"></span> Platform online</div>
+        <small>Prototype • 2026</small>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">UNIFIED STAKEHOLDER ENGAGEMENT & INTELLIGENCE</div>
+          <h1 id="viewTitle">Command Centre</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="ghost-btn" id="seedBtn">Reset demo data</button>
+          <button class="primary-btn" data-view-jump="intake">+ Log interaction</button>
+          <div class="user-chip"><div class="avatar">TN</div><div><small>Signed in</small><b id="signedInUser">Transnet User</b></div></div><button class="logout-btn" id="logoutBtn">Sign out</button>
+        </div>
+      </header>
+
+      <section id="dashboard" class="view active">
+        <div class="hero-strip">
+          <div>
+            <div class="hero-kicker">TODAY'S STAKEHOLDER PULSE</div>
+            <h2>See what matters before it becomes a crisis.</h2>
+            <p>Capture → Classify → Route → Track → Analyse → Respond → Learn → Report</p>
+            <div class="hero-actions">
+              <a class="hero-questionnaire-btn" href="https://forms.zohopublic.com/transnetone/form/transnetconnect/formperma/pQ4bEgYNO5gnGRDSUN-nBvpujm5sdA6lxNChJlo7reY?zf_lang=en" target="_blank" rel="noopener">Complete Questionnaire ↗</a>
+              <button class="hero-questionnaire-secondary" data-view-jump="questionnaire">Open inside Transnet Connect</button>
+            </div>
+          </div>
+          <div class="hero-score">
+            <div class="score-label">Network risk index</div>
+            <div class="score" id="networkRiskScore">—<span>/100</span></div>
+            <div class="score-note" id="networkRiskNote">Loading…</div>
+          </div>
+        </div>
+
+        <div class="metrics-grid" id="metricsGrid"></div>
+
+        <div class="dashboard-grid">
+          <div class="panel span-2">
+            <div class="panel-head">
+              <div>
+                <div class="section-label">LIVE CASE FLOW</div>
+                <h3>Priority matters requiring attention</h3>
+              </div>
+              <button class="text-btn" data-view-jump="cases">View all cases →</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Case</th><th>Stakeholder</th><th>Issue</th><th>OD</th><th>Risk</th><th>SLA</th></tr></thead>
+                <tbody id="priorityCases"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="section-label">CHANNEL MIX</div>
+            <h3>How stakeholders are reaching us</h3>
+            <div class="channel-bars" id="channelBars"></div>
+          </div>
+
+          <div class="panel">
+            <div class="section-label">ISSUE HOTSPOTS</div>
+            <h3>Geographic concentration</h3>
+            <div class="mini-map">
+              <div class="map-label gauteng">Gauteng <span>38</span></div>
+              <div class="map-label kzn">KwaZulu-Natal <span>27</span></div>
+              <div class="map-label wc">Western Cape <span>19</span></div>
+              <div class="map-label ec">Eastern Cape <span>14</span></div>
+            </div>
+            <div class="legend"><span class="risk-high-dot"></span> High concentration <span class="risk-med-dot"></span> Emerging</div>
+          </div>
+
+          <div class="panel span-2">
+            <div class="panel-head">
+              <div>
+                <div class="section-label">INTELLIGENCE SIGNALS</div>
+                <h3>What the system is noticing</h3>
+              </div>
+            </div>
+            <div class="signal-grid">
+              <div class="signal-card danger"><div class="signal-icon">!</div><div><b>Recurring safety complaints</b><p>Rail-crossing complaints in Ekurhuleni have increased 41% over the last 7 days.</p></div></div>
+              <div class="signal-card warn"><div class="signal-icon">↻</div><div><b>Duplicate cluster detected</b><p>12 enquiries across WhatsApp, email and calls appear linked to the same port access issue.</p></div></div>
+              <div class="signal-card good"><div class="signal-icon">✓</div><div><b>Response performance improving</b><p>Average first response time is down to 2h 18m from 3h 04m last week.</p></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="intake" class="view">
+        <div class="section-intro">
+          <div><div class="section-label">UNIFIED INTAKE</div><h2>Log a stakeholder interaction</h2><p>Capture a contact from any channel, then let the routing engine classify and assign it.</p></div>
+        </div>
+
+        <div class="intake-layout">
+          <form id="intakeForm" class="panel form-panel">
+            <div class="form-grid">
+              <label>Channel<select id="channel"><option>WhatsApp</option><option>Contact Centre</option><option>Email</option><option>Web / QR</option><option>Touchscreen</option></select></label>
+              <label>Stakeholder type<select id="stakeholderType"><option>Community</option><option>Customer</option><option>Government</option><option>Investor</option><option>Supplier</option><option>Media</option><option>Regulator</option><option>Employee</option></select></label>
+              <label>Name<input id="stakeholderName" value="Thandi Mokoena" required /></label>
+              <label>Organisation<input id="organisation" value="Ekurhuleni Community Forum" /></label>
+              <label>Province<select id="province"><option>Gauteng</option><option>KwaZulu-Natal</option><option>Western Cape</option><option>Eastern Cape</option><option>Limpopo</option><option>Mpumalanga</option><option>North West</option><option>Free State</option><option>Northern Cape</option></select></label>
+              <label>Location<input id="location" value="Germiston" /></label>
+              <label class="full">Interaction / issue<textarea id="message" rows="7" required>The rail crossing has been blocked again this morning. Children are crossing between stationary wagons and the community has reported this before. We need urgent intervention before someone gets hurt.</textarea></label>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="ghost-btn" id="clearForm">Clear</button>
+              <button type="submit" class="primary-btn">Analyse & create case</button>
+            </div>
+          </form>
+
+          <div class="panel ai-panel">
+            <div class="section-label">AI & ROUTING PREVIEW</div>
+            <h3>Suggested classification</h3>
+            <div id="analysisPreview" class="analysis-empty">
+              Submit the interaction to generate an issue type, sentiment, urgency, OD route, risk score and SLA recommendation.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="cases" class="view">
+        <div class="section-intro split">
+          <div><div class="section-label">CRM & WORKFLOW</div><h2>Case management</h2><p>Track ownership, SLA, status, risk and cross-division coordination.</p></div>
+          <button class="primary-btn" data-view-jump="intake">+ New case</button>
+        </div>
+        <div class="panel">
+          <div class="toolbar">
+            <input id="caseSearch" placeholder="Search cases, stakeholders or issues…" />
+            <select id="caseFilter"><option value="all">All statuses</option><option>Open</option><option>In Progress</option><option>Escalated</option><option>Resolved</option></select>
+          </div>
+          <div class="table-wrap wide-table">
+            <table><thead><tr><th>ID</th><th>Created</th><th>Stakeholder</th><th>Channel</th><th>Issue</th><th>OD</th><th>Owner</th><th>Risk</th><th>Status</th><th>SLA</th></tr></thead><tbody id="casesTable"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <section id="stakeholders" class="view">
+        <div class="section-intro"><div><div class="section-label">STAKEHOLDER INTELLIGENCE</div><h2>Stakeholder directory</h2><p>A single relationship view across organisations, issues, channels and operating divisions.</p></div></div>
+        <div class="stakeholder-grid" id="stakeholderGrid"></div>
+      </section>
+
+      <section id="questionnaire" class="view">
+        <div class="section-intro questionnaire-intro">
+          <div>
+            <div class="section-label">STAKEHOLDER QUESTIONNAIRE</div>
+            <h2>Transnet Connect Questionnaire</h2>
+            <p>Capture structured stakeholder feedback through the live Zoho questionnaire and keep the engagement journey connected to the platform.</p>
+          </div>
+          <a class="primary-btn link-btn" href="https://forms.zohopublic.com/transnetone/form/transnetconnect/formperma/pQ4bEgYNO5gnGRDSUN-nBvpujm5sdA6lxNChJlo7reY?zf_lang=en" target="_blank" rel="noopener">Open questionnaire ↗</a>
+        </div>
+
+        <div class="questionnaire-layout">
+          <div class="questionnaire-summary">
+            <div class="questionnaire-badge">LIVE ZOHO FORM</div>
+            <h3>Structured stakeholder input</h3>
+            <p>The questionnaire is embedded directly from the Zoho form you supplied. Responses remain within the Zoho form environment while users experience it from inside Transnet Connect.</p>
+            <div class="questionnaire-steps">
+              <div><span>01</span><b>Invite</b><small>Share the questionnaire with the relevant stakeholder.</small></div>
+              <div><span>02</span><b>Capture</b><small>Stakeholders submit structured feedback through Zoho Forms.</small></div>
+              <div><span>03</span><b>Connect</b><small>In the live implementation, responses can feed CRM, case routing and analytics.</small></div>
+            </div>
+            <div class="questionnaire-note"><b>Prototype note:</b> This version embeds the live questionnaire. Automated response-to-case creation will be connected during the Zoho integration phase.</div>
+          </div>
+          <div class="questionnaire-frame-wrap">
+            <div class="questionnaire-frame-head">
+              <div><span class="live-dot"></span><b>Transnet Connect questionnaire</b></div>
+              <a href="questionnaire.html" target="_blank">Open branded full-page view ↗</a>
+            </div>
+            <iframe class="questionnaire-frame" title="Transnet Connect Questionnaire" loading="lazy" src="https://forms.zohopublic.com/transnetone/form/transnetconnect/formperma/pQ4bEgYNO5gnGRDSUN-nBvpujm5sdA6lxNChJlo7reY?zf_lang=en" allow="camera; microphone"></iframe>
+            <noscript><p>JavaScript is required to load the Zoho questionnaire. Use the Open questionnaire button above.</p></noscript>
+          </div>
+        </div>
+      </section>
+
+      <section id="intelligence" class="view">
+        <div class="section-intro"><div><div class="section-label">AI-DRIVEN INTELLIGENCE</div><h2>Signals, trends & reputational risk</h2><p>Move from reactive case management to proactive stakeholder intelligence.</p></div></div>
+        <div class="panel" style="margin-bottom:16px">
+          <div class="panel-head">
+            <div><div class="section-label">AI INSIGHT — ALL CASES</div><h3 style="margin:6px 0 0">Commonalities & anomalies</h3></div>
+            <button class="primary-btn" id="generateInsightBtn">Generate insight</button>
+          </div>
+          <div id="insightResult" class="analysis-empty" style="margin-top:14px">Click "Generate insight" to analyse all current cases for patterns and outliers.</div>
+        </div>
+        <div class="intelligence-grid">
+          <div class="panel span-2">
+            <div class="section-label">ISSUE TREND</div><h3>Cases by issue category</h3>
+            <div class="trend-chart" id="trendChart"></div>
+          </div>
+          <div class="panel"><div class="section-label">SENTIMENT</div><h3>Current interaction sentiment</h3><div class="donut-wrap"><div class="donut"><div class="donut-hole"><strong>54%</strong><span>negative</span></div></div></div><div class="sentiment-key"><span>54% Negative</span><span>31% Neutral</span><span>15% Positive</span></div></div>
+          <div class="panel"><div class="section-label">DUPLICATION CLUSTERS</div><h3>Potentially related matters</h3><div class="cluster-list"><div><b>#CL-019</b><span>Rail crossing safety • 12 cases</span></div><div><b>#CL-018</b><span>Port access permits • 8 cases</span></div><div><b>#CL-017</b><span>Supplier payment queries • 6 cases</span></div></div></div>
+          <div class="panel span-2"><div class="section-label">REPUTATIONAL ESCALATION</div><h3>High-impact cases to watch</h3><div id="riskCards" class="risk-cards"></div></div>
+        </div>
+      </section>
+
+      <section id="reports" class="view">
+        <div class="section-intro"><div><div class="section-label">EXCO REPORTING</div><h2>Executive reporting</h2><p>Decision-ready views of demand, risk, responsiveness and stakeholder pressure.</p></div></div>
+        <div class="reports-grid">
+          <div class="report-card"><span>01</span><h3>Stakeholder Pulse</h3><p>Executive summary of volume, sentiment, major risks and emerging themes.</p><button class="ghost-btn">Generate report</button></div>
+          <div class="report-card"><span>02</span><h3>OD Performance</h3><p>SLA compliance, response times, escalations and case closure by operating division.</p><button class="ghost-btn">Generate report</button></div>
+          <div class="report-card"><span>03</span><h3>Geographic Risk</h3><p>Province, municipality and site-level concentration of recurring stakeholder issues.</p><button class="ghost-btn">Generate report</button></div>
+          <div class="report-card"><span>04</span><h3>Issue Recurrence</h3><p>Duplicate and recurring matters showing systemic pressure points and unresolved causes.</p><button class="ghost-btn">Generate report</button></div>
+        </div>
+        <div class="panel architecture">
+          <div class="section-label">SYSTEM ARCHITECTURE</div><h3>How Transnet Connect works</h3>
+          <div class="flow">
+            <div><b>1</b><span>Multi-channel input</span><small>WhatsApp • Calls • Email • Web/QR</small></div><i>→</i>
+            <div><b>2</b><span>Unified intake</span><small>Stakeholder • Issue • Location • Media</small></div><i>→</i>
+            <div><b>3</b><span>AI intelligence</span><small>Sentiment • Risk • Duplicates • SLA</small></div><i>→</i>
+            <div><b>4</b><span>Routing engine</span><small>OD • Priority • Owner • Case</small></div><i>→</i>
+            <div><b>5</b><span>Response & reporting</span><small>Track • Resolve • Learn • Report</small></div>
+          </div>
+        </div>
+      </section>
+
+      <div id="toast" class="toast"></div>
+
+      <div id="caseModalBackdrop" class="modal-backdrop">
+        <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="caseModalTitle">
+          <div class="modal-head">
+            <div><div class="section-label" id="caseModalId"></div><h2 id="caseModalTitle" style="margin:4px 0 0"></h2></div>
+            <button class="text-btn" id="caseModalClose" aria-label="Close">✕ Close</button>
+          </div>
+          <div id="caseModalBody" class="modal-body"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

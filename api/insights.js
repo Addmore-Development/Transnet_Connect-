@@ -87,7 +87,7 @@ Only report patterns you can actually support from the data given — do not inv
       model: GEMINI_MODEL,
       apiKey: process.env.GEMINI_API_KEY,
       prompt,
-      maxOutputTokens: 1200,
+      maxOutputTokens: 1600,
     });
 
     const textPart = data.candidates?.[0]?.content?.parts?.find((p) => p.text);
@@ -101,8 +101,14 @@ Only report patterns you can actually support from the data given — do not inv
       const cleaned = textPart.text.replace(/```json|```/g, '').trim();
       parsed = JSON.parse(cleaned);
     } catch (e) {
-      console.error('Failed to parse model JSON (insights):', textPart.text);
-      return res.status(502).json({ error: 'Malformed AI response' });
+      try {
+        const match = textPart.text.match(/\{[\s\S]*\}/);
+        if (!match) throw e;
+        parsed = JSON.parse(match[0]);
+      } catch (e2) {
+        console.error('Failed to parse model JSON (insights):', textPart.text);
+        return res.status(502).json({ error: 'Malformed AI response' });
+      }
     }
 
     // Guardrails — make sure the shape is safe to render even if the model

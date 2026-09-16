@@ -78,4 +78,22 @@ async function sbDeleteAll(table) {
   }
 }
 
-module.exports = { sbSelect, sbInsert, sbDeleteAll };
+/** Update one row by id. Returns the updated row. */
+async function sbUpdate(table, id, patch) {
+  const res = await fetch(supabaseUrl(`/${table}?id=eq.${encodeURIComponent(id)}`), {
+    method: 'PATCH',
+    headers: { ...supabaseHeaders(), Prefer: 'return=representation' },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    const err = new Error(`Supabase update failed (${res.status})`);
+    err.status = res.status;
+    err.body = body;
+    throw err;
+  }
+  const rows = await res.json();
+  return rows[0] || null;
+}
+
+module.exports = { sbSelect, sbInsert, sbDeleteAll, sbUpdate };

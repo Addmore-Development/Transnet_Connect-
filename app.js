@@ -1,10 +1,7 @@
 const auth = JSON.parse(localStorage.getItem('tc_auth') || 'null');
 if (!auth) { window.location.replace('login.html'); }
 
-// Cases now live in Supabase (via /api/cases), not localStorage. This array
-// is populated by loadCases() below and re-populated after every create or
-// reset, so the rest of the app (renderDashboard/renderCases/etc) can keep
-// reading it exactly as before.
+
 let cases = [];
 
 async function loadCases(){
@@ -49,11 +46,7 @@ function renderDashboard(){
  document.getElementById('channelBars').innerHTML=Object.entries(channelCounts).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="channel-row"><span>${k}</span><div class="bar"><span style="width:${Math.round(v/max*100)}%"></span></div><b>${v}</b></div>`).join('');
 }
 
-// Computes a weighted risk index from actual open cases (High=3, Medium=1,
-// Low=0 points, scaled to 0-100) rather than the hardcoded "62" this used
-// to show. Distinguishes "no data in the database yet" from "everything is
-// currently resolved" — those mean very different things and shouldn't
-// look the same.
+
 function renderNetworkRiskIndex(cases,open,high){
  const scoreEl=document.getElementById('networkRiskScore');
  const noteEl=document.getElementById('networkRiskNote');
@@ -138,9 +131,7 @@ if(generateInsightBtn){
  });
 }
 
-// Local fallback classifier — used only if the AI endpoint is unreachable
-// (offline demo, network issue, etc). Kept so the prototype still works
-// without a backend deployed.
+
 function analyseLocal(text, stakeholderType, province){
  const lower=text.toLowerCase();
  let issue='General stakeholder enquiry',od='Group CA',risk='Medium',sentiment='Neutral',priority='P2',sla='4 hours',owner='Corporate Affairs Queue';
@@ -157,9 +148,7 @@ function analyseLocal(text, stakeholderType, province){
  return {issue,od,risk,sentiment,priority,sla,owner,duplicate,score,province};
 }
 
-// Calls the server-side /api/analyse endpoint (which calls the Claude API).
-// Falls back to the local keyword heuristic if the request fails, so the
-// intake form still works if the backend isn't deployed or is unreachable.
+
 async function analyse(message, stakeholderType, province, stakeholder){
  const history = cases
   .filter(c=>c.stakeholder===stakeholder)
@@ -177,6 +166,58 @@ async function analyse(message, stakeholderType, province, stakeholder){
  }catch(err){
   console.warn('AI analysis unavailable, using local fallback:', err);
   return {...analyseLocal(message, stakeholderType, province), source:'fallback'};
+ }
+}
+
+
+async function loadInbox(){
+ const list=document.getElementById('inboxList');
+ try{
+  const res=await fetch('/api/inbox');
+  if(!res.ok) throw new Error(`API error ${res.status}`);
+  const items=await res.json();
+  if(!items.length){list.innerHTML='<div class="analysis-empty">No new messages — inbox is clear.</div>';return;}
+  list.innerHTML=items.map(i=>`
+   <div class="inbox-item" data-id="${i.id}" data-table="${i.table}">
+    <div class="inbox-item-main">
+     <span class="inbox-channel">${i.channel}</span>
+     <b>${i.from||'Unknown sender'}</b>
+     <span class="inbox-subject">${i.subject||''}</span>
+     <p>${i.preview||''}</p>
+    </div>
+    <button class="primary-btn inbox-analyse-btn">Analyse case</button>
+   </div>`).join('');
+  list.querySelectorAll('.inbox-analyse-btn').forEach(btn=>{
+   btn.addEventListener('click',()=>analyseInboxItem(btn));
+  });
+ }catch(err){
+  console.error('Failed to load inbox:',err);
+  list.innerHTML='<div class="analysis-empty">Could not load incoming messages — check the server and try again.</div>';
+ }
+}
+
+async function analyseInboxItem(btn){
+ const row=btn.closest('.inbox-item');
+ const id=row.dataset.id, table=row.dataset.table;
+ btn.disabled=true;btn.textContent='Analysing…';
+ try{
+  const res=await fetch('/api/inbox/analyse',{
+   method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({id,table})
+  });
+  if(!res.ok){
+   let serverMsg='';try{serverMsg=(await res.json()).error||''}catch(e){}
+   throw new Error(serverMsg||`API error ${res.status}`);
+  }
+  const result=await res.json();
+  row.remove();
+  await loadCases();
+  toast(`${result.case.id} created and routed to ${result.case.od}`);
+ }catch(err){
+  console.error('Failed to analyse inbox item:',err);
+  toast('Could not analyse this message — check the server and try again.');
+  btn.disabled=false;btn.textContent='Analyse case';
  }
 }
 
@@ -227,6 +268,7 @@ document.getElementById('seedBtn').addEventListener('click',async()=>{
   const res=await fetch('/api/seed',{method:'POST'});
   if(!res.ok) throw new Error(`API error ${res.status}`);
   await loadCases();
+  await loadInbox();
   toast('Demo data reset');
  }catch(err){
   console.error('Failed to reset demo data:',err);
@@ -240,11 +282,14 @@ document.querySelectorAll('.report-card button').forEach(b=>b.addEventListener('
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 function renderAll(){renderDashboard();renderCases();renderStakeholders();renderIntelligence()}
 loadCases();
+loadInbox();
 
 // Case detail modal — shows the full record for one case, including the
 // original stakeholder message and every rating/classification field.
 const caseModalBackdrop=document.getElementById('caseModalBackdrop');
 const caseModalBody=document.getElementById('caseModalBody');
+const CASE_STATUSES=['Open','In Progress','Escalated','Resolved'];
+
 function openCaseModal(caseId){
  const c=cases.find(x=>x.id===caseId);
  if(!c) return;
@@ -259,7 +304,13 @@ function openCaseModal(caseId){
    <h4>Rating & classification</h4>
    <div class="modal-fields">
     <div class="modal-field"><span>Risk</span><b>${riskPill(c.risk)}</b></div>
-    <div class="modal-field"><span>Status</span><b>${statusPill(c.status)}</b></div>
+    <div class="modal-field">
+     <span>Status</span>
+     <div class="status-edit-row">
+      <select id="modalStatusSelect">${CASE_STATUSES.map(s=>`<option value="${s}" ${s===c.status?'selected':''}>${s}</option>`).join('')}</select>
+      <button class="ghost-btn" id="modalStatusSave">Update</button>
+     </div>
+    </div>
     <div class="modal-field"><span>Sentiment</span><b>${c.sentiment}</b></div>
     <div class="modal-field"><span>SLA</span><b class="sla ${slaClass(c.sla)}">${c.sla}</b></div>
     <div class="modal-field"><span>Recommended OD</span><b>${c.od}</b></div>
@@ -278,7 +329,30 @@ function openCaseModal(caseId){
    </div>
   </div>`;
  caseModalBackdrop.classList.add('show');
+ document.getElementById('modalStatusSave').addEventListener('click',()=>updateCaseStatus(c.id));
 }
+
+async function updateCaseStatus(caseId){
+ const select=document.getElementById('modalStatusSelect');
+ const saveBtn=document.getElementById('modalStatusSave');
+ const newStatus=select.value;
+ saveBtn.disabled=true;saveBtn.textContent='Saving…';
+ try{
+  const res=await fetch(`/api/cases/${encodeURIComponent(caseId)}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:newStatus})});
+  if(!res.ok){
+   let serverMsg='';try{serverMsg=(await res.json()).error||''}catch(e){}
+   throw new Error(serverMsg||`API error ${res.status}`);
+  }
+  await loadCases();
+  toast(`${caseId} status updated to ${newStatus}`);
+  openCaseModal(caseId); // re-render modal with fresh data/pill colours
+ }catch(err){
+  console.error('Failed to update case status:',err);
+  toast('Could not update status — check the server and try again.');
+  saveBtn.disabled=false;saveBtn.textContent='Update';
+ }
+}
+
 function closeCaseModal(){caseModalBackdrop.classList.remove('show')}
 document.getElementById('caseModalClose').addEventListener('click',closeCaseModal);
 caseModalBackdrop.addEventListener('click',e=>{if(e.target===caseModalBackdrop)closeCaseModal()});

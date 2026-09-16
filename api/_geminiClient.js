@@ -36,6 +36,14 @@ async function callGemini({ model, apiKey, prompt, maxOutputTokens }) {
           generationConfig: {
             maxOutputTokens,
             responseMimeType: 'application/json',
+            // These models "think" before answering by default, and thinking
+            // tokens are drawn from the same maxOutputTokens budget as the
+            // actual answer. For a structured classification/analysis task
+            // like this, we don't need the reasoning trace — and leaving it
+            // enabled was likely why responses sometimes came back truncated
+            // (and therefore invalid JSON): the model spent most of its
+            // budget thinking and ran out of room to finish the JSON.
+            thinkingConfig: { thinkingBudget: 0 },
           },
         }),
       }

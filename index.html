@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Transnet Connect — Stakeholder Intelligence Platform</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/png" href="images/transnet-logo.png" />
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand-lockup">
-        <div class="brand-mark">TN</div>
+        <img class="brand-logo" src="images/transnet-logo.png" alt="Transnet" />
         <div>
           <div class="brand-name">TRANSNET <span style="color:#7DBE00">CONNECT</span></div>
           <div class="brand-sub">Stakeholder Management Connector</div>
@@ -19,12 +20,13 @@
 
       <nav class="nav" aria-label="Primary">
         <button class="nav-item active" data-view="dashboard"><span>▦</span> Dashboard</button>
-        <button class="nav-item" data-view="intake"><span>＋</span> New Intake</button>
+        <button class="nav-item" data-view="intake"><span>＋</span> Record an Engagement</button>
         <button class="nav-item" data-view="cases"><span>☷</span> Cases</button>
         <button class="nav-item" data-view="stakeholders"><span>◉</span> Stakeholders</button>
         <button class="nav-item" data-view="questionnaire"><span>✓</span> Questionnaire</button>
-        <button class="nav-item" data-view="intelligence"><span>◌</span> Intelligence</button>
+        <button class="nav-item" data-view="intelligence"><span>◌</span> Insights</button>
         <button class="nav-item" data-view="reports"><span>▤</span> Reports</button>
+        <button class="nav-item admin-only" data-view="logins"><span>◔</span> Logins</button>
       </nav>
 
       <div class="sidebar-footer">
@@ -36,25 +38,30 @@
     <main class="main">
       <header class="topbar">
         <div>
-          <div class="eyebrow">UNIFIED STAKEHOLDER ENGAGEMENT & INTELLIGENCE</div>
+          <div class="eyebrow">STAKEHOLDER ENGAGEMENT WORKSPACE</div>
           <h1 id="viewTitle">Command Centre</h1>
         </div>
         <div class="topbar-actions">
           <button class="ghost-btn" id="seedBtn">Reset demo data</button>
-          <button class="primary-btn" data-view-jump="intake">+ Log interaction</button>
+          <button class="primary-btn" data-view-jump="intake">+ Record an engagement</button>
           <div class="user-chip"><div class="avatar">TN</div><div><small>Signed in</small><b id="signedInUser">Transnet User</b></div></div><button class="logout-btn" id="logoutBtn">Sign out</button>
         </div>
       </header>
 
       <section id="dashboard" class="view active">
+        <div class="dash-tabs" id="dashTabs" role="tablist" aria-label="Dashboard sections">
+          <button type="button" class="active" data-dtab-btn="overview">Overview</button>
+          <button type="button" data-dtab-btn="engagement">Engagement activity</button>
+          <button type="button" data-dtab-btn="followups">Follow-ups</button>
+          <button type="button" data-dtab-btn="insights">Stakeholder insights</button>
+        </div>
         <div class="hero-strip">
           <div>
             <div class="hero-kicker">TODAY'S STAKEHOLDER PULSE</div>
-            <h2>See what matters before it becomes a crisis.</h2>
-            <p>Capture → Classify → Route → Track → Analyse → Respond → Learn → Report</p>
+            <h2>Welcome to your stakeholder engagement workspace.</h2>
+            <p>A shared view of engagements, follow-ups and insights across Transnet.</p>
             <div class="hero-actions">
-              <a class="hero-questionnaire-btn" href="https://forms.zohopublic.com/transnetone/form/transnetconnect/formperma/pQ4bEgYNO5gnGRDSUN-nBvpujm5sdA6lxNChJlo7reY?zf_lang=en" target="_blank" rel="noopener">Complete Questionnaire ↗</a>
-              <button class="hero-questionnaire-secondary" data-view-jump="questionnaire">Open inside Transnet Connect</button>
+              <button class="hero-questionnaire-secondary" data-view-jump="cases">View priority matters</button>
             </div>
           </div>
           <div class="hero-score">
@@ -63,6 +70,8 @@
             <div class="score-note" id="networkRiskNote">Loading…</div>
           </div>
         </div>
+
+        <div id="supportAlerts" class="panel support-alerts" data-dtab="overview" hidden></div>
 
         <div class="metrics-grid" id="metricsGrid"></div>
 
@@ -79,6 +88,21 @@
               <table>
                 <thead><tr><th>Case</th><th>Stakeholder</th><th>Issue</th><th>OD</th><th>Risk</th><th>SLA</th></tr></thead>
                 <tbody id="priorityCases"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel span-2" data-dtab="followups">
+            <div class="panel-head">
+              <div>
+                <div class="section-label">FOLLOW-UPS</div>
+                <h3>Open follow-ups <span id="followupCount" class="fu-count"></span></h3>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Case</th><th>Follow-up</th><th>Action owner</th><th>Due</th></tr></thead>
+                <tbody id="followupRows"></tbody>
               </table>
             </div>
           </div>
@@ -104,7 +128,7 @@
           <div class="panel span-2">
             <div class="panel-head">
               <div>
-                <div class="section-label">INTELLIGENCE SIGNALS</div>
+                <div class="section-label">STAKEHOLDER INSIGHTS</div>
                 <h3>What the system is noticing</h3>
               </div>
             </div>
@@ -119,25 +143,25 @@
 
       <section id="intake" class="view">
         <div class="section-intro">
-          <div><div class="section-label">UNIFIED INTAKE</div><h2>Log a stakeholder interaction</h2><p>Capture a contact from any channel, then let the routing engine classify and assign it.</p></div>
+          <div><div class="section-label">RECORD AN ENGAGEMENT</div><h2>Record an engagement</h2><p>Keep a useful record of your conversation and any agreed next steps, then let the system suggest who should follow up.</p></div>
         </div>
 
         <div class="panel" id="inboxPanel">
           <div class="section-label">INCOMING MESSAGES</div>
-          <h3>Unprocessed contacts</h3>
+          <h3>Messages awaiting review</h3>
           <div id="inboxList" class="inbox-list">Loading…</div>
         </div>
 
         <div class="intake-layout">
           <form id="intakeForm" class="panel form-panel">
             <div class="form-grid">
-              <label>Channel<select id="channel"><option>WhatsApp</option><option>Contact Centre</option><option>Email</option><option>Web / QR</option><option>Touchscreen</option></select></label>
+              <label>Channel<select id="channel"><option>Contact Centre</option></select></label>
               <label>Stakeholder type<select id="stakeholderType"><option>Community</option><option>Customer</option><option>Government</option><option>Investor</option><option>Supplier</option><option>Media</option><option>Regulator</option><option>Employee</option></select></label>
-              <label>Name<input id="stakeholderName" value="Thandi Mokoena" required /></label>
-              <label>Organisation<input id="organisation" value="Ekurhuleni Community Forum" /></label>
+              <label>Name<input id="stakeholderName" placeholder="e.g. Thandi Mokoena" required /></label>
+              <label>Organisation<input id="organisation" placeholder="e.g. Ekurhuleni Community Forum" /></label>
               <label>Province<select id="province"><option>Gauteng</option><option>KwaZulu-Natal</option><option>Western Cape</option><option>Eastern Cape</option><option>Limpopo</option><option>Mpumalanga</option><option>North West</option><option>Free State</option><option>Northern Cape</option></select></label>
-              <label>Location<input id="location" value="Germiston" /></label>
-              <label class="full">Interaction / issue<textarea id="message" rows="7" required>The rail crossing has been blocked again this morning. Children are crossing between stationary wagons and the community has reported this before. We need urgent intervention before someone gets hurt.</textarea></label>
+              <label>Location<input id="location" placeholder="e.g. Germiston" /></label>
+              <label class="full">Discussion summary<textarea id="message" rows="7" required placeholder="Summarise the conversation or issue and any agreed next steps..."></textarea></label>
             </div>
             <div class="form-actions">
               <button type="button" class="ghost-btn" id="clearForm">Clear</button>
@@ -146,10 +170,10 @@
           </form>
 
           <div class="panel ai-panel">
-            <div class="section-label">AI & ROUTING PREVIEW</div>
-            <h3>Suggested classification</h3>
+            <div class="section-label">AI-ASSISTED SUGGESTION</div>
+            <h3>Suggested categorisation</h3>
             <div id="analysisPreview" class="analysis-empty">
-              Submit the interaction to generate an issue type, sentiment, urgency, OD route, risk score and SLA recommendation.
+              Record the engagement to see a suggested issue type, sentiment, urgency, assigned division, risk score and SLA recommendation.
             </div>
           </div>
         </div>
@@ -166,13 +190,14 @@
             <select id="caseFilter"><option value="all">All statuses</option><option>Open</option><option>In Progress</option><option>Escalated</option><option>Resolved</option></select>
           </div>
           <div class="table-wrap wide-table">
-            <table><thead><tr><th>ID</th><th>Created</th><th>Stakeholder</th><th>Channel</th><th>Issue</th><th>OD</th><th>Owner</th><th>Risk</th><th>Status</th><th>SLA</th></tr></thead><tbody id="casesTable"></tbody></table>
+            <table><thead><tr><th>ID</th><th>Created</th><th>Stakeholder</th><th>Channel</th><th>Issue</th><th>Division</th><th>Owner</th><th>Risk</th><th>Status</th><th>SLA</th></tr></thead><tbody id="casesTable"></tbody></table>
           </div>
         </div>
       </section>
 
       <section id="stakeholders" class="view">
-        <div class="section-intro"><div><div class="section-label">STAKEHOLDER INTELLIGENCE</div><h2>Stakeholder directory</h2><p>A single relationship view across organisations, issues, channels and operating divisions.</p></div></div>
+        <div class="section-intro"><div><div class="section-label">STAKEHOLDER INSIGHTS</div><h2>Stakeholders</h2><p>The stakeholders with access to Transnet Connect, and how to reach them.</p></div></div>
+        <div id="stakeholdersMsg" class="logins-msg" hidden></div>
         <div class="stakeholder-grid" id="stakeholderGrid"></div>
       </section>
 
@@ -210,7 +235,7 @@
       </section>
 
       <section id="intelligence" class="view">
-        <div class="section-intro"><div><div class="section-label">AI-DRIVEN INTELLIGENCE</div><h2>Signals, trends & reputational risk</h2><p>Move from reactive case management to proactive stakeholder intelligence.</p></div></div>
+        <div class="section-intro"><div><div class="section-label">AI-ASSISTED INSIGHTS</div><h2>Stakeholder insights</h2><p>Explore engagement trends and create reports that support planning and decisions.</p></div></div>
         <div class="panel" style="margin-bottom:16px">
           <div class="panel-head">
             <div><div class="section-label">AI INSIGHT — ALL CASES</div><h3 style="margin:6px 0 0">Commonalities & anomalies</h3></div>
@@ -223,19 +248,27 @@
             <div class="section-label">ISSUE TREND</div><h3>Cases by issue category</h3>
             <div class="trend-chart" id="trendChart"></div>
           </div>
-          <div class="panel"><div class="section-label">SENTIMENT</div><h3>Current interaction sentiment</h3><div class="donut-wrap"><div class="donut"><div class="donut-hole"><strong>54%</strong><span>negative</span></div></div></div><div class="sentiment-key"><span>54% Negative</span><span>31% Neutral</span><span>15% Positive</span></div></div>
-          <div class="panel"><div class="section-label">DUPLICATION CLUSTERS</div><h3>Potentially related matters</h3><div class="cluster-list"><div><b>#CL-019</b><span>Rail crossing safety • 12 cases</span></div><div><b>#CL-018</b><span>Port access permits • 8 cases</span></div><div><b>#CL-017</b><span>Supplier payment queries • 6 cases</span></div></div></div>
+          <div class="panel"><div class="section-label">SENTIMENT</div><h3>Current interaction sentiment</h3><div class="donut-wrap"><div class="donut" id="sentimentDonut"><div class="donut-hole"><strong id="sentimentPct">&ndash;</strong><span id="sentimentLabel">no data</span></div></div></div><div class="sentiment-key" id="sentimentKey"><span>No data yet</span></div></div>
+          <div class="panel"><div class="section-label">DUPLICATION CLUSTERS</div><h3>Potentially related matters</h3><div class="cluster-list" id="clusterList"><div><span>No related matters yet</span></div></div></div>
           <div class="panel span-2"><div class="section-label">REPUTATIONAL ESCALATION</div><h3>High-impact cases to watch</h3><div id="riskCards" class="risk-cards"></div></div>
         </div>
       </section>
 
       <section id="reports" class="view">
-        <div class="section-intro"><div><div class="section-label">EXCO REPORTING</div><h2>Executive reporting</h2><p>Decision-ready views of demand, risk, responsiveness and stakeholder pressure.</p></div></div>
+        <div class="section-intro"><div><div class="section-label">EXCO REPORTING</div><h2>Executive reporting</h2><p>Explore engagement trends and create reports that support planning and decisions.</p></div></div>
+        <div class="reports-toolbar">
+          <button type="button" class="ghost-btn" id="rpExplore">Explore insights</button>
+          <div class="rp-filter"><span>Filter results</span>
+            <select id="rpFilter" aria-label="Filter results"><option value="all">All cases</option><option value="open">Unresolved</option><option value="resolved">Resolved</option><option value="highrisk">High risk</option></select>
+            <select id="rpDivision" class="admin-only" aria-label="Filter by division"><option value="all">All divisions</option></select>
+          </div>
+          <button type="button" class="primary-btn" id="rpDownload">Download report</button>
+        </div>
         <div class="reports-grid">
-          <div class="report-card"><span>01</span><h3>Stakeholder Pulse</h3><p>Executive summary of volume, sentiment, major risks and emerging themes.</p><button class="ghost-btn">Generate report</button></div>
-          <div class="report-card"><span>02</span><h3>OD Performance</h3><p>SLA compliance, response times, escalations and case closure by operating division.</p><button class="ghost-btn">Generate report</button></div>
-          <div class="report-card"><span>03</span><h3>Geographic Risk</h3><p>Province, municipality and site-level concentration of recurring stakeholder issues.</p><button class="ghost-btn">Generate report</button></div>
-          <div class="report-card"><span>04</span><h3>Issue Recurrence</h3><p>Duplicate and recurring matters showing systemic pressure points and unresolved causes.</p><button class="ghost-btn">Generate report</button></div>
+          <div class="report-card" data-report="pulse"><span>01</span><h3>Stakeholder Pulse</h3><p>Executive summary of volume, sentiment, major risks and emerging themes.</p><button class="ghost-btn">Create report</button></div>
+          <div class="report-card" data-report="od"><span>02</span><h3>OD Performance</h3><p>SLA compliance, response times, escalations and case closure by operating division.</p><button class="ghost-btn">Create report</button></div>
+          <div class="report-card" data-report="geo"><span>03</span><h3>Geographic Risk</h3><p>Province, municipality and site-level concentration of recurring stakeholder issues.</p><button class="ghost-btn">Create report</button></div>
+          <div class="report-card" data-report="recurrence"><span>04</span><h3>Issue Recurrence</h3><p>Duplicate and recurring matters showing systemic pressure points and unresolved causes.</p><button class="ghost-btn">Create report</button></div>
         </div>
         <div class="panel architecture">
           <div class="section-label">SYSTEM ARCHITECTURE</div><h3>How Transnet Connect works</h3>
@@ -246,6 +279,17 @@
             <div><b>4</b><span>Routing engine</span><small>OD • Priority • Owner • Case</small></div><i>→</i>
             <div><b>5</b><span>Response & reporting</span><small>Track • Resolve • Learn • Report</small></div>
           </div>
+        </div>
+      </section>
+
+      <section id="logins" class="view">
+        <div class="section-intro"><div><div class="section-label">ADMIN ONLY</div><h2>Login activity</h2><p>Who has signed in to the stakeholder and division accounts, and how long they spent on the platform.</p></div><button class="ghost-btn" id="loginsRefresh">Refresh</button></div>
+        <div id="loginsMsg" class="logins-msg" hidden></div>
+        <div class="panel"><div class="section-label">ACCOUNTS</div><h3>Time on platform by account</h3>
+          <div class="table-wrap"><table><thead><tr><th>Account</th><th>Division</th><th>Status</th><th>Last sign-in</th><th>Sign-ins</th><th>Total time</th></tr></thead><tbody id="loginsAccounts"></tbody></table></div>
+        </div>
+        <div class="panel logins-sessions"><div class="section-label">SESSIONS</div><h3>Recent sign-ins</h3>
+          <div class="table-wrap wide-table"><table><thead><tr><th>Account</th><th>Division</th><th>Signed in</th><th>Signed out / last active</th><th>Time signed in</th><th>Status</th></tr></thead><tbody id="loginsSessions"></tbody></table></div>
         </div>
       </section>
 
@@ -261,6 +305,17 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <div id="reportOverlay" class="report-overlay" aria-hidden="true">
+    <div class="report-sheet" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+      <div class="report-toolbar">
+        <button class="primary-btn" id="reportPrint" type="button">Print / Save as PDF</button>
+        <button class="ghost-btn" id="reportCsv" type="button">Download report (CSV)</button>
+        <button class="ghost-btn" id="reportClose" type="button">Close</button>
+      </div>
+      <div id="reportBody" class="report-body"></div>
+    </div>
   </div>
 
   <script src="app.js"></script>

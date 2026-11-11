@@ -3,86 +3,162 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sign in — Transnet Connect</title>
+  <title>Transnet Connect — Stakeholder Management Connector</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/png" href="images/transnet-logo.png" />
+  <style>
+    :root{--lp-bg:#282a2c;--lp-red:#d4292e;--lp-green:#7dbe00}
+    html:has(.lp-body){overflow:hidden}
+    .lp-body{margin:0;height:100vh;height:100dvh;background:var(--lp-bg);color:#fff;overflow:hidden}
+    .lp{position:relative;height:100vh;height:100dvh;display:flex;flex-direction:column;justify-content:space-between;gap:clamp(12px,3vh,32px);padding:clamp(18px,4vh,40px) clamp(24px,6vw,88px);overflow:hidden;isolation:isolate}
+    /* brand circles, carried over from the old dark panel but scaled to the full page */
+    .lp::before,.lp::after{content:"";position:absolute;border-radius:50%;z-index:-1;transition:transform .7s cubic-bezier(.2,.8,.2,1)}
+    .lp::before{width:min(70vw,860px);aspect-ratio:1;background:var(--lp-red);right:calc(min(70vw,860px) / -3);top:calc(min(70vw,860px) / -2.6)}
+    .lp::after{width:min(44vw,540px);aspect-ratio:1;background:var(--lp-green);right:calc(min(44vw,540px) / -4);top:calc(min(70vw,860px) * .33)}
+    .lp.is-open::before{transform:translate(-4%,3%) scale(1.04)}
+    .lp.is-open::after{transform:translate(-8%,-3%) scale(1.06)}
+
+    .lp-lockup{display:flex;align-items:center;gap:20px}
+    .lp-lockup .login-logo{height:clamp(64px,11vh,96px);max-width:none;padding:9px 14px;border-radius:12px}
+    .lp-lockup strong{display:block;font-size:clamp(20px,3.2vh,28px);letter-spacing:.16em}
+    .lp-lockup span{display:block;color:#d6d7d8;font-size:clamp(14px,2.2vh,19px);margin-top:7px}
+
+    .lp-hero{max-width:640px;margin-block:auto}
+    .lp-kicker{color:var(--lp-green);font-size:12px;font-weight:900;letter-spacing:.16em;margin:0 0 18px}
+    .lp-hero h1{margin:0 0 16px;font-size:clamp(26px,min(3.7vw,6vh),46px);line-height:1.05;font-weight:900;letter-spacing:-.02em}
+    .lp-hero h1 span{display:block}
+    .lp-hero p.lp-lede{margin:0 0 clamp(16px,3.5vh,30px);max-width:480px;color:#d9dadb;font-size:clamp(15px,1.5vw,18px);line-height:1.6}
+    .lp-cta{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-width:220px;padding:clamp(12px,2vh,16px) 30px;border:0;border-radius:12px;background:var(--lp-red);color:#fff;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 12px 30px rgba(212,41,46,.35);transition:background .2s,transform .2s}
+    .lp-cta:hover{background:#b92227;transform:translateY(-2px)}
+    .lp-cta:focus-visible,.lp-close:focus-visible{outline:3px solid #fff;outline-offset:3px}
+
+    .lp-flow{display:flex;flex-wrap:nowrap;gap:8px;max-width:100%;margin:0;padding:0;list-style:none}
+    .lp-flow li{border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:7px 12px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;color:#ececec;background:rgba(40,42,44,.55)}
+    @media(max-width:900px){.lp-flow{gap:5px}.lp-flow li{padding:6px 8px;font-size:8.5px;letter-spacing:.04em}}
+    @media(max-width:600px){.lp-flow{flex-wrap:wrap}}
+
+    /* sign-in drawer */
+    .lp-scrim{position:fixed;inset:0;background:rgba(20,21,22,.55);opacity:0;pointer-events:none;transition:opacity .35s;z-index:10}
+    .lp-scrim.show{opacity:1;pointer-events:auto}
+    .lp-drawer{position:fixed;top:0;right:0;bottom:0;width:min(480px,100%);background:#fff;color:var(--ink);padding:56px clamp(26px,4vw,52px);display:flex;flex-direction:column;justify-content:center;transform:translateX(102%);visibility:hidden;transition:transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s .45s;z-index:11;box-shadow:-24px 0 70px rgba(0,0,0,.28);overflow-y:auto}
+    .lp-drawer.show{transform:none;visibility:visible;transition:transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s}
+    .lp-close{position:absolute;top:18px;right:18px;width:40px;height:40px;border:0;border-radius:50%;background:#f1f1ef;color:#3b3d3f;font-size:22px;line-height:1;cursor:pointer}
+    .lp-close:hover{background:#e4e4e1}
+    .lp-drawer h2{font-size:32px;margin:8px 0}
+    .lp-drawer>p{color:var(--muted);margin:0 0 28px;line-height:1.55}
+    @media(prefers-reduced-motion:reduce){.lp::before,.lp::after,.lp-drawer,.lp-scrim,.lp-cta{transition:none}}
+    @media(max-width:600px){.lp{padding:20px 22px}.lp-cta{width:100%}.lp-lockup{gap:14px}}
+  </style>
+<style id="landing-text-shift">
+/* landing-text-shift */
+.lp-hero {
+  position: relative;
+  left: 6vw;
+}
+@media (max-width: 768px) {
+  .lp-hero { left: 0; }
+}
+/* /landing-text-shift */
+</style>
 </head>
-<body class="login-body">
-  <main class="login-shell">
-    <section class="login-brand" aria-label="Transnet Connect introduction">
-      <div class="login-lockup">
-        <div class="login-logo-mark">TN</div>
-        <div><strong>TRANSNET CONNECT</strong><span>Stakeholder Management Connector</span></div>
-      </div>
+<body class="lp-body">
+  <main class="lp" id="lp">
+    <div class="lp-lockup">
+      <img class="login-logo" src="images/transnet-logo.png" alt="Transnet" />
+      <div><strong>TRANSNET CONNECT</strong><span>Stakeholder Management Connector</span></div>
+    </div>
 
-      <div class="login-brand-copy">
-        <div class="login-eyebrow">UNIFIED STAKEHOLDER INTELLIGENCE</div>
-        <h1>Engage. Route. Respond. Learn.</h1>
-        <p>A single operational view of stakeholder interactions, ownership, risk, escalation and intelligence across Transnet.</p>
-      </div>
-
-      <div class="login-flow" aria-label="Platform workflow">
-        <span>Capture</span><span>Classify</span><span>Route</span><span>Track</span><span>Analyse</span><span>Respond</span><span>Report</span>
-      </div>
+    <section class="lp-hero" aria-label="Transnet Connect introduction">
+      <p class="lp-kicker">UNIFIED STAKEHOLDER INTELLIGENCE</p>
+      <h1><span>Engage. Route.</span><span>Respond. Learn.</span></h1>
+      <p class="lp-lede">A single operational view of stakeholder interactions, ownership, risk, escalation and intelligence across Transnet.</p>
+      <button class="lp-cta" type="button" id="openLogin" aria-haspopup="dialog" aria-controls="loginDrawer">Log in</button>
     </section>
 
-    <section class="login-panel">
-      <div class="login-eyebrow">SECURE PLATFORM ACCESS</div>
-      <h2>Welcome back</h2>
-      <p>Sign in to access the Transnet Connect stakeholder command centre.</p>
-
-      
-        
-
-      <form class="login-form" id="loginForm">
-        <label>Work email
-          <input type="email" id="loginEmail" autocomplete="username" placeholder="name@transnet.net" value="demo@transnet.net" required />
-        </label>
-        <label>Operating division
-          <select id="loginDivision">
-            <option>Group Corporate Affairs</option>
-            <option>Transnet Freight Rail (TFR)</option>
-            <option>Transnet Rail Infrastructure Manager (TRIM)</option>
-            <option>Transnet National Ports Authority (TNPA)</option>
-            <option>Transnet Port Terminals (TPT)</option>
-            <option>Transnet Engineering (TE)</option>
-            <option>Transnet Pipelines (TPL)</option>
-            <option>Transnet Property</option>
-          </select>
-        </label>
-        <label>Password
-          <div class="password-wrap">
-            <input type="password" id="loginPassword" autocomplete="current-password" value="Transnet2026!" required />
-            <button class="toggle-password" type="button" id="togglePassword">SHOW</button>
-          </div>
-        </label>
-        <div class="remember-row">
-          <label><input type="checkbox" id="rememberMe" checked /> Keep me signed in</label>
-          <span>Prototype access</span>
-        </div>
-        <div class="login-error" id="loginError">Enter a valid work email and password to continue.</div>
-        <button class="primary-btn login-submit" type="submit">Sign in to Transnet Connect</button>
-      </form>
-
-      <div class="login-note"><b>Demo credentials:</b> demo@transnet.net / Transnet2026!<br>This front-end login is for prototype demonstration only. Production deployment should use Transnet-approved identity, SSO/MFA and security controls.</div>
-      <div class="login-footer">TRANSNET CONNECT • Stakeholder Management Connector • Prototype 2026</div>
-    </section>
+    <ul class="lp-flow" aria-label="Platform workflow">
+      <li>Interactions</li><li>Stakeholder Profiles</li><li>Ownership</li><li>Progress</li><li>Insights</li><li>Engagement</li><li>Reporting</li>
+    </ul>
   </main>
+
+  <div class="lp-scrim" id="lpScrim"></div>
+  <aside class="lp-drawer" id="loginDrawer" role="dialog" aria-modal="true" aria-labelledby="loginTitle" aria-hidden="true">
+    <button class="lp-close" type="button" id="closeLogin" aria-label="Close sign in">&times;</button>
+    <div class="login-eyebrow">SECURE PLATFORM ACCESS</div>
+    <h2 id="loginTitle">Welcome back</h2>
+    <p>Sign in to access the Transnet Connect stakeholder command centre.</p>
+
+    <form class="login-form" id="loginForm">
+      <label>Work email
+        <input type="email" id="loginEmail" autocomplete="username" placeholder="name@transnet.net" required />
+      </label>
+      <label>Password
+        <div class="password-wrap">
+          <input type="password" id="loginPassword" autocomplete="current-password" required />
+          <button class="toggle-password" type="button" id="togglePassword">SHOW</button>
+        </div>
+      </label>
+      <div class="remember-row">
+        <label><input type="checkbox" id="rememberMe" checked /> Keep me signed in</label>
+        <span>Division access</span>
+      </div>
+      <div class="login-error" id="loginError" role="alert">Enter your work email and password to continue.</div>
+      <button class="primary-btn login-submit" type="submit">Sign in to Transnet Connect</button>
+    </form>
+
+    <div class="login-footer">TRANSNET CONNECT • Stakeholder Management Connector • Prototype 2026</div>
+  </aside>
+
 <script>
+  const lp=document.getElementById('lp');
+  const drawer=document.getElementById('loginDrawer');
+  const scrim=document.getElementById('lpScrim');
+  const openBtn=document.getElementById('openLogin');
   const form=document.getElementById('loginForm');
   const email=document.getElementById('loginEmail');
   const password=document.getElementById('loginPassword');
-  const division=document.getElementById('loginDivision');
   const error=document.getElementById('loginError');
+  const submitBtn=form.querySelector('.login-submit');
+  const submitLabel=submitBtn.textContent;
+
+  function openLogin(){
+    drawer.classList.add('show');scrim.classList.add('show');lp.classList.add('is-open');
+    drawer.setAttribute('aria-hidden','false');
+    setTimeout(()=>email.focus(),250);
+  }
+  function closeLogin(){
+    drawer.classList.remove('show');scrim.classList.remove('show');lp.classList.remove('is-open');
+    drawer.setAttribute('aria-hidden','true');
+    openBtn.focus();
+  }
+  openBtn.addEventListener('click',openLogin);
+  document.getElementById('closeLogin').addEventListener('click',closeLogin);
+  scrim.addEventListener('click',closeLogin);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&drawer.classList.contains('show'))closeLogin();});
+  if(location.hash==='#login')openLogin();
+
   document.getElementById('togglePassword').addEventListener('click',e=>{
     const showing=password.type==='text'; password.type=showing?'password':'text'; e.currentTarget.textContent=showing?'SHOW':'HIDE';
   });
-  form.addEventListener('submit',e=>{
+  function showError(msg){error.textContent=msg;error.classList.add('show');}
+  form.addEventListener('submit',async e=>{
     e.preventDefault();
-    if(!email.value.includes('@') || password.value.length<6){error.classList.add('show');return;}
     error.classList.remove('show');
-    const auth={email:email.value.trim(),division:division.value,at:new Date().toISOString()};
-    localStorage.setItem('tc_auth',JSON.stringify(auth));
-    window.location.href='index.html';
+    if(!email.value.includes('@') || !password.value){showError('Enter your work email and password to continue.');return;}
+    submitBtn.disabled=true;submitBtn.textContent='Signing in…';
+    try{
+      const res=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email.value.trim(),password:password.value})});
+      const data=await res.json().catch(()=>({}));
+      if(res.status===405||res.status===404) throw new Error('The sign-in API is not running. Start the project with "vercel dev" (not Live Server) or use the deployed site.');
+      if(!res.ok) throw new Error(data.error||('Sign-in failed ('+res.status+')'));
+      const auth={sessionId:data.sessionId,token:data.token,expiresAt:data.expiresAt,email:data.user.email,role:data.user.role,division:data.user.division,divisionLabel:data.user.divisionLabel};
+      localStorage.removeItem('tc_auth');sessionStorage.removeItem('tc_auth');
+      // "Keep me signed in" -> survives closing the browser (until the session expires); otherwise this tab only.
+      (document.getElementById('rememberMe').checked?localStorage:sessionStorage).setItem('tc_auth',JSON.stringify(auth));
+      window.location.href='index.html';
+    }catch(err){
+      showError(err.message==='Failed to fetch'?'Could not reach the server. Please try again.':err.message);
+      submitBtn.disabled=false;submitBtn.textContent=submitLabel;
+    }
   });
 </script>
 </body>

@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Transnet Connect — Submit an enquiry</title>
+<link rel="icon" type="image/png" href="images/transnet-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Questrial&display=swap" rel="stylesheet">
+<style>
+  :root{--green:#8dc63f;--red:#d4292e;--ink:#4a4a4a;--muted:#7a7a7a}
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:Questrial,"Segoe UI",Arial,sans-serif;color:var(--ink);min-height:100vh;
+    /* Optional photo: drop a compressed image at images/form-bg.jpg. Without it you get the soft gradient. */
+    background:
+      linear-gradient(rgba(255,255,255,.72),rgba(255,255,255,.72)),
+      url('images/form-bg.jpg') center/cover no-repeat,
+      linear-gradient(180deg,#dce8f5,#eee4d2);
+  }
+  .wrap{max-width:1300px;margin:0 auto;padding:20px 26px 48px}
+
+  .head{background:#fff;border-radius:10px;padding:30px 50px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+  .head h1{margin:0;font-weight:400;font-size:28px;color:var(--green)}
+  .head img{height:84px;width:auto;max-width:45%;object-fit:contain}
+
+  .title{margin:52px 33px 0;padding-bottom:14px;font-size:21px;font-weight:400;color:var(--muted);border-bottom:3px solid #e2e2e2}
+
+  .card{background:#fff;padding:30px;margin-top:40px}
+  .q{display:block;font-weight:700;font-size:15px;color:#777;margin:0 0 10px}
+  .req{color:var(--red);margin-left:8px}
+  .intro b{display:block;color:#777;margin-bottom:2px}
+  .intro span{font-size:14.5px;color:#777;line-height:1.5}
+
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:20px 48px}
+  .choice{font:inherit;font-size:14.5px;text-align:left;color:#444;background:#fff;border:1px solid #333;border-radius:4px;padding:15px 18px;cursor:pointer}
+  .choice:hover{background:#fafafa}
+  .choice:focus-visible,.field:focus-visible,.btn:focus-visible{outline:3px solid #9fd2ff;outline-offset:2px}
+  .choice[aria-checked="true"]{border-color:var(--green);box-shadow:0 0 0 2px var(--green) inset;background:#f4faea}
+
+  /* hover / focus description on operating divisions */
+  .choice{position:relative}
+  .choice .tip{display:none;position:absolute;left:12px;right:12px;top:calc(100% + 8px);z-index:5;background:#3b3d3f;color:#fff;font-size:13px;line-height:1.45;padding:10px 12px;border-radius:6px;box-shadow:0 8px 22px rgba(0,0,0,.22);pointer-events:none}
+  .choice .tip:before{content:"";position:absolute;left:20px;top:-5px;width:10px;height:10px;background:#3b3d3f;transform:rotate(45deg)}
+  .choice:hover .tip,.choice:focus .tip{display:block}
+  .choices .choice:hover,.choices .choice:focus{z-index:6}
+  .field{display:block;width:100%;max-width:620px;font:inherit;font-size:15px;color:#333;border:1px solid #bbb;border-radius:4px;padding:10px 12px;background:#fff}
+  textarea.field{min-height:100px;resize:vertical}
+  .field.wide{max-width:100%}
+
+  .err{color:var(--red);font-size:13.5px;margin:12px 0 0;min-height:1.2em}
+  .nav{display:flex;justify-content:center;gap:20px;margin-top:44px}
+  .btn{font:inherit;font-size:14px;border-radius:999px;padding:13px 38px;min-width:104px;cursor:pointer}
+  .btn.solid{background:var(--green);color:#fff;border:1px solid var(--green)}
+  .btn.ghost{background:#fdf3f3;color:#3b4a6b;border:1px solid var(--green)}
+  .btn[disabled]{opacity:.6;cursor:default}
+  .count{text-align:right;font-size:13px;color:#555;margin:10px 34px 0}
+
+  .done{text-align:center;padding:48px 30px}
+  .done h2{margin:0 0 12px;font-weight:400;font-size:26px;color:var(--green)}
+  .done p{margin:8px 0;font-size:16px;line-height:1.5}
+  .refbox{display:inline-block;margin:18px 0 8px;padding:12px 22px;border-left:4px solid var(--green);background:#f4faea;font-size:20px;letter-spacing:.5px;color:#333}
+
+  @media(max-width:760px){
+    .wrap{padding:12px 12px 36px}
+    .head{padding:20px 22px}.head h1{font-size:22px}.head img{height:56px}
+    .title{margin:36px 6px 0;font-size:18px}
+    .choices{grid-template-columns:1fr;gap:14px}
+    .card{padding:22px 18px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <h1>Transnet Connect</h1>
+    <img src="images/transnet-logo.png" alt="Transnet">
+  </header>
+
+  <h2 class="title" id="stepTitle"></h2>
+  <form id="formRoot" novalidate></form>
+  <div class="count" id="stepCount" aria-live="polite"></div>
+</div>
+
+<script>
+(function () {
+  // ---- What each area of enquiry shows on step 2 -------------------------------------
+  // `division` (operating divisions only) is the routing code the server already understands.
+  // Everything else is routed by the AI / admin when the enquiry is confirmed in the inbox.
+  var AREAS = [
+    {
+      id: 'bd', label: 'Business Development / Strategic Partnerships',
+      introTitle: 'Strategic Partnerships & Investment Opportunities',
+      introText: 'Transnet works with investors, logistics partners and industry stakeholders to develop world-class transport infrastructure that supports economic growth. Please select the nature of your enquiry.',
+      listTitle: 'Business Development / Strategic Partnerships Questions',
+      options: ['Export corridor development', 'General partnership enquiry', 'Industry collaboration opportunities',
+        'Infrastructure investment opportunities', 'Innovation partnerships', 'Investor relations enquiries',
+        'Public-private partnerships', 'Strategic logistics partnerships', 'Strategic project enquiries', 'Supply chain collaboration'].map(function (l) { return { label: l }; }),
+      textLabel: 'Business Development / Strategic Partnerships', wide: false
+    },
+    { id: 'general', label: 'General enquiry', textLabel: 'How can we assist you?', wide: true },
+    {
+      id: 'info', label: 'General information hub',
+      introTitle: 'General Information',
+      introText: 'If you are unsure which division your enquiry relates to, please select a category below and we will ensure your request reaches the correct Transnet team.',
+      listTitle: 'General Information Hub',
+      options: ['Careers and employment', 'Customer support', 'Event or conference follow-up', 'General corporate enquiry',
+        'Investor information', 'Media enquiry', 'Other enquiry', 'Supplier information', 'Sustainability and ESG enquiries'].map(function (l) { return { label: l }; }),
+      textLabel: 'General Information Hub Query', wide: false
+    },
+    {
+      id: 'divisions', label: 'Operating divisions',
+      listTitle: 'Operating divisions',
+      options: [
+        { label: 'Transnet Engineering', division: 'TE', desc: 'Designs, builds, maintains and refurbishes locomotives, wagons, coaches and other heavy equipment for rail and ports.' },
+        { label: 'Transnet Freight Rail', division: 'TFR', desc: 'Runs the freight train services that move containers, coal, minerals, agricultural and other cargo across South Africa.' },
+        { label: 'Transnet Pipelines', division: 'TPL', desc: 'Transports petroleum products and gas through Transnet\u2019s pipeline network.' },
+        { label: 'Transnet Port Terminals', division: 'TPT', desc: 'Operates the cargo terminals in South African ports, handling containers, bulk, break-bulk and vehicles.' },
+        { label: 'Transnet National Ports Authority', division: 'TNPA', desc: 'Owns and manages port land and infrastructure, and provides marine services such as pilotage and tugs.' },
+        { label: 'Transnet Property', division: 'Property', desc: 'Manages Transnet\u2019s land and buildings, including leasing and property development.' },
+        { label: 'Transnet Rail Infrastructure Manager (TRIM)', division: 'TRIM', desc: 'Looks after the rail network itself (track, signalling and electrical systems) and gives train operators access to it.' },
+        { label: 'Transnet Academy / Foundation', desc: 'Skills development and training, and Transnet\u2019s community and social investment programmes.' }
+      ],
+      textLabel: 'How can we assist you?', wide: true
+    },
+    { id: 'other', label: 'Other enquiry (I don\u2019t know much about Transnet)', textLabel: 'Tell us what you need and we will point you to the right team', wide: true }
+  ];
+
+  var STAKEHOLDER_TYPES = ['Community', 'Customer', 'Government', 'Investor', 'Supplier', 'Media', 'Regulator', 'Employee', 'Parliamentary', 'Other'];
+  var PROVINCES = ['Eastern Cape', 'Free State', 'Gauteng', 'KwaZulu-Natal', 'Limpopo', 'Mpumalanga', 'North West', 'Northern Cape', 'Western Cape'];
+  var TITLES = { 1: 'Welcome to Transnet Connect', 2: 'How can we help you?', 3: 'Let us know each other!' };
+  var PHONE_RE = /^[0-9+()\-\s.]{7,30}$/;
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  var state = blankState();
+  var root = document.getElementById('formRoot');
+  var titleEl = document.getElementById('stepTitle');
+  var countEl = document.getElementById('stepCount');
+  var errEl = null;
+
+  function blankState() { return { step: 1, areaId: null, category: null, division: null, text: '', first: '', last: '', email: '', phone: '', stakeholderType: '', province: '', location: '' }; }
+  function area() { return AREAS.filter(function (a) { return a.id === state.areaId; })[0] || null; }
+
+  // ---- tiny DOM helpers (textContent only, so nothing typed by a user is ever treated as HTML) ----
+  function h(tag, props, kids) {
+    var node = document.createElement(tag);
+    Object.keys(props || {}).forEach(function (k) {
+      if (k === 'class') node.className = props[k];
+      else if (k === 'text') node.textContent = props[k];
+      else node.setAttribute(k, props[k]);
+    });
+    (kids || []).forEach(function (c) { if (c) node.appendChild(c); });
+    return node;
+  }
+  function card(kids, cls) { return h('div', { class: 'card' + (cls ? ' ' + cls : '') }, kids); }
+  function label(text, required, opts) {
+    var l = h('label', { class: 'q', text: text });
+    if (opts && opts.forId) l.setAttribute('for', opts.forId);
+    if (opts && opts.id) l.id = opts.id;
+    if (required) l.appendChild(h('span', { class: 'req', text: '*', 'aria-hidden': 'true' }));
+    return l;
+  }
+  function choiceGroup(labelledBy, options, isSelected, onPick) {
+    var group = h('div', { class: 'choices', role: 'radiogroup', 'aria-labelledby': labelledBy });
+    options.forEach(function (opt) {
+      var b = h('button', { type: 'button', class: 'choice', role: 'radio', 'aria-checked': isSelected(opt) ? 'true' : 'false', text: opt.label });
+      if (opt.desc) {
+        var tipId = 'tip-' + opt.label.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+        b.appendChild(h('span', { class: 'tip', role: 'tooltip', id: tipId, text: opt.desc }));
+        b.setAttribute('aria-describedby', tipId);
+      }
+      b.addEventListener('click', function () {
+        onPick(opt);
+        Array.prototype.forEach.call(group.children, function (x) { x.setAttribute('aria-checked', 'false'); });
+        b.setAttribute('aria-checked', 'true');
+      });
+      group.appendChild(b);
+    });
+    return group;
+  }
+  function textInput(id, type, key, max, autocomplete) {
+    var i = h('input', { id: id, type: type, class: 'field', maxlength: String(max), autocomplete: autocomplete });
+    i.value = state[key];
+    i.addEventListener('input', function () { state[key] = i.value; });
+    return i;
+  }
+
+  function stakeholderSelect() {
+    var sel = h('select', { id: 'st', class: 'field' });
+    sel.appendChild(h('option', { value: '', text: 'Select one…' }));
+    STAKEHOLDER_TYPES.forEach(function (t) { sel.appendChild(h('option', { value: t, text: t })); });
+    sel.value = state.stakeholderType;
+    sel.addEventListener('change', function () { state.stakeholderType = sel.value; });
+    return sel;
+  }
+
+  function provinceSelect() {
+    var sel = h('select', { id: 'pv', class: 'field', autocomplete: 'address-level1' });
+    sel.appendChild(h('option', { value: '', text: 'Select your province…' }));
+    PROVINCES.forEach(function (p) { sel.appendChild(h('option', { value: p, text: p })); });
+    sel.value = state.province;
+    sel.addEventListener('change', function () { state.province = sel.value; });
+    return sel;
+  }
+
+  // ---- steps ---------------------------------------------------------------------------
+  function render() {
+    root.innerHTML = '';
+    titleEl.textContent = TITLES[state.step] || '';
+    countEl.textContent = state.step + '/3';
+    var err = h('p', { class: 'err', role: 'alert' });
+    errEl = err;
+    var nav = h('div', { class: 'nav' });
+    var a = area();
+
+    if (state.step === 1) {
+      var c1 = card([label('Select your area of enquiry', true, { id: 'areaLabel' })]);
+      c1.appendChild(choiceGroup('areaLabel', AREAS, function (o) { return o.id === state.areaId; }, function (o) {
+        if (state.areaId !== o.id) { state.areaId = o.id; state.category = null; state.division = null; state.text = ''; }
+        err.textContent = '';
+      }));
+      c1.appendChild(err);
+      root.appendChild(c1);
+      nav.appendChild(h('button', { type: 'submit', class: 'btn ghost', text: 'Next' }));
+    }
+
+    if (state.step === 2 && a) {
+      if (a.introTitle) root.appendChild(card([h('div', { class: 'intro' }, [h('b', { text: a.introTitle }), h('span', { text: a.introText })])]));
+      if (a.options) {
+        root.appendChild(card([
+          label(a.listTitle, false, { id: 'catLabel' }),
+          choiceGroup('catLabel', a.options, function (o) { return o.label === state.category; }, function (o) {
+            state.category = o.label; state.division = o.division || null; err.textContent = '';
+          })
+        ]));
+      }
+      var ta = h('textarea', { id: 'msg', class: 'field' + (a.wide ? ' wide' : ''), maxlength: '4000', rows: '4' });
+      ta.value = state.text;
+      ta.addEventListener('input', function () { state.text = ta.value; });
+      root.appendChild(card([label(a.textLabel, true, { forId: 'msg' }), ta, err]));
+      nav.appendChild(h('button', { type: 'button', class: 'btn solid', text: 'Back', id: 'backBtn' }));
+      nav.appendChild(h('button', { type: 'submit', class: 'btn ghost', text: 'Next' }));
+    }
+
+    if (state.step === 3) {
+      root.appendChild(card([label('Who is this enquiry from?', true, { forId: 'st' }), stakeholderSelect()]));
+      root.appendChild(card([label('First Name', true, { forId: 'fn' }), textInput('fn', 'text', 'first', 80, 'given-name')]));
+      root.appendChild(card([label('Last Name', true, { forId: 'ln' }), textInput('ln', 'text', 'last', 80, 'family-name')]));
+      root.appendChild(card([label('Email Address', true, { forId: 'em' }), textInput('em', 'email', 'email', 254, 'email')]));
+      root.appendChild(card([label('Phone Number', true, { forId: 'ph' }), textInput('ph', 'tel', 'phone', 30, 'tel')]));
+      root.appendChild(card([label('Province', true, { forId: 'pv' }), provinceSelect()]));
+      root.appendChild(card([label('City / Town / Area', true, { forId: 'lc' }), textInput('lc', 'text', 'location', 120, 'address-level2'), err]));
+      nav.appendChild(h('button', { type: 'button', class: 'btn solid', text: 'Back', id: 'backBtn' }));
+      nav.appendChild(h('button', { type: 'submit', class: 'btn ghost', text: 'Submit', id: 'submitBtn' }));
+    }
+
+    root.appendChild(nav);
+    var back = document.getElementById('backBtn');
+    if (back) back.addEventListener('click', function () { state.step -= 1; render(); window.scrollTo(0, 0); });
+  }
+
+  function fail(msg) { if (errEl) errEl.textContent = msg; }
+
+  root.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var a = area();
+
+    if (state.step === 1) {
+      if (!a) return fail('Please select your area of enquiry.');
+      state.step = 2; render(); window.scrollTo(0, 0); return;
+    }
+    if (state.step === 2) {
+      if (a.options && !state.category) return fail('Please select the nature of your enquiry.');
+      if (state.text.trim().length < 5) return fail('Please tell us a little more about your enquiry.');
+      state.step = 3; render(); window.scrollTo(0, 0); return;
+    }
+    if (state.step === 3) {
+      if (!state.first.trim() || !state.last.trim()) return fail('Please enter your first name and last name.');
+      if (!EMAIL_RE.test(state.email.trim())) return fail('Please enter a valid email address.');
+      if (STAKEHOLDER_TYPES.indexOf(state.stakeholderType) < 0) return fail('Please select who this enquiry is from.');
+      if (!PHONE_RE.test(state.phone.trim()) || state.phone.replace(/\D/g, '').length < 7) return fail('Please enter a valid phone number.');
+      if (PROVINCES.indexOf(state.province) < 0) return fail('Please select the province you are from.');
+      if (state.location.trim().length < 2) return fail('Please tell us the city, town or area you are from.');
+      send();
+    }
+  });
+
+  function send() {
+    var btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.textContent = 'Submitting…';
+    var a = area();
+    fetch('/api/public/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: state.first.trim(), lastName: state.last.trim(), email: state.email.trim(),
+        phone: state.phone.trim(), stakeholderType: state.stakeholderType, province: state.province, location: state.location.trim(), area: a.label, category: state.category || undefined, division: state.division || undefined,
+        message: state.text.trim()
+      })
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        if (!res.ok) throw new Error(data.error || '');
+        showDone(data.reference);
+      });
+    }).catch(function (e) {
+      console.error('Submission failed:', e);
+      fail((e && e.message) || 'Something went wrong submitting your enquiry — please try again.');
+      btn.disabled = false; btn.textContent = 'Submit';
+    });
+  }
+
+  function showDone(reference) {
+    var email = state.email.trim();
+    root.innerHTML = '';
+    titleEl.textContent = 'Thank you';
+    countEl.textContent = '';
+    var kids = [h('h2', { text: 'Your enquiry has been received' }),
+      h('p', { text: 'It will be taken care of by the relevant Transnet team.' })];
+    if (reference) {
+      kids.push(h('div', { class: 'refbox', text: reference }));
+      kids.push(h('p', { text: 'Please keep this reference number. A confirmation is on its way to ' + email + '.' }));
+    }
+    var again = h('button', { type: 'button', class: 'btn solid', text: 'Exit' });
+    again.addEventListener('click', function () { state = blankState(); render(); window.scrollTo(0, 0); });
+    kids.push(h('div', { class: 'nav' }, [again]));
+    root.appendChild(card(kids, 'done'));
+    window.scrollTo(0, 0);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -4,30 +4,64 @@
 //                     label so numbering stays consistent regardless of who
 //                     else might be creating cases at the same time.
 
-const { sbSelect, sbInsert } = require('./_supabaseClient');
+const { sbSelect, sbInsert, sbUpdate } = require('./_supabaseClient');
+const { requireUser } = require('./_auth');
+const { normaliseOd, canSeeCase, CODES } = require('./_divisions');
+const { newCaseRef } = require('./_caseRef');
 
-function nextCaseId(existingRows) {
-  // Find the highest numeric suffix among ids like 'TC-2026-1042' and
-  // increment it, so new cases keep counting up rather than colliding.
-  let max = 1042; // seed data starts here, so new cases start from 1043
-  for (const row of existingRows) {
-    const match = /^TC-2026-(\d+)$/.exec(row.id || '');
-    if (match) {
-      const n = parseInt(match[1], 10);
-      if (n > max) max = n;
+// GET   /api/cases?resource=support  -> support requests (admin: all, division: its own)
+// PATCH /api/cases?resource=support  -> admin marks one as Handled / Open
+async function supportRequests(req, res) {
+  const user = await requireUser(req, res);
+  if (!user) return;
+  try {
+    if (req.method === 'GET') {
+      const filter = user.role === 'admin' ? '' : `&division=eq.${encodeURIComponent(user.division)}`;
+      const rows = await sbSelect('support_requests', `order=created_at.desc&limit=200${filter}`);
+      return res.status(200).json({ requests: rows });
     }
+    if (req.method === 'PATCH') {
+      if (user.role !== 'admin') return res.status(403).json({ error: 'Only an admin can update support requests.' });
+      const { id, status } = req.body || {};
+      if (typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id) || !['Open', 'Handled'].includes(status)) {
+        return res.status(400).json({ error: 'A request id and a status (Open or Handled) are required.' });
+      }
+      const handled = status === 'Handled';
+      const row = await sbUpdate('support_requests', id, {
+        status,
+        handled_by: handled ? user.email : null,
+        handled_at: handled ? new Date().toISOString() : null,
+      });
+      if (!row) return res.status(404).json({ error: 'Support request not found.' });
+      return res.status(200).json({ request: row });
+    }
+    res.setHeader('Allow', 'GET, PATCH');
+    return res.status(405).json({ error: 'Method not allowed' });
+  } catch (err) {
+    console.error('support requests error:', err.status, err.body || err.message);
+    const missing = err.status === 404 || /PGRST205|does not exist/i.test(String(err.body || ''));
+    return res.status(500).json({
+      error: missing
+        ? 'The support_requests table does not exist yet. Run supabase_engagement_features.sql in the Supabase SQL editor.'
+        : 'Could not load support requests.',
+    });
   }
-  return `TC-2026-${max + 1}`;
 }
 
 module.exports = async function handler(req, res) {
   try {
+    if (req.query && req.query.resource === 'support') return supportRequests(req, res);
     if (req.method === 'GET') {
+      const user = await requireUser(req, res);
+      if (!user) return;
       const rows = await sbSelect('cases', 'order=created_at.desc');
-      return res.status(200).json(rows);
+      // Division users only ever receive the cases directed to their division.
+      return res.status(200).json(rows.filter((row) => canSeeCase(user, row)));
     }
 
     if (req.method === 'POST') {
+      const user = await requireUser(req, res, { adminOnly: true });
+      if (!user) return;
       let body;
       try {
         body = req.body || {};
@@ -41,9 +75,13 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: `Missing required field(s): ${missing.join(', ')}` });
       }
 
-      // Look at existing ids to pick the next sequential number.
-      const existing = await sbSelect('cases', 'select=id');
-      const id = nextCaseId(existing);
+      const od = normaliseOd(body.od);
+      if (!od) {
+        return res.status(400).json({ error: `od must be one of: ${CODES.join(', ')}` });
+      }
+
+      // Same counter the inbox and the acknowledgement emails use, so numbers never collide.
+      const id = await newCaseRef();
 
       const now = new Date();
       const created = now.toLocaleString('en-ZA', {
@@ -58,7 +96,7 @@ module.exports = async function handler(req, res) {
         type: body.type || null,
         channel: body.channel || null,
         issue: body.issue,
-        od: body.od,
+        od,
         owner: body.owner || null,
         risk: body.risk,
         status: body.status,

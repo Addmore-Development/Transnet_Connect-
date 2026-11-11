@@ -1,16 +1,7 @@
-// /api/insights.js
-// Vercel serverless function. Runs a batch analysis across the current set
-// of cases to surface commonalities, anomalies, and an executive summary.
-// Unlike /api/analyse.js (one interaction in, one classification out), this
-// takes the whole case list and looks for patterns across it.
-//
-// Same env vars as analyse.js:
-//   GEMINI_API_KEY = AIza... (from https://aistudio.google.com/apikey)
-//   MOCK_AI=true to skip the real API call and return canned data for free.
 
-const { callGemini } = require('./_geminiClient');
 
-const GEMINI_MODEL = 'gemini-flash-latest';
+const { callOpenAI } = require('./_openaiClient');
+const { requireUser } = require('./_auth');
 
 function mockInsights(cases) {
   const open = cases.filter((c) => c.status !== 'Resolved');
@@ -41,6 +32,10 @@ module.exports = async function handler(req, res) {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // Any signed-in user may run this; it only analyses the cases the caller sends.
+  const user = await requireUser(req, res);
+  if (!user) return;
 
   let cases;
   try {
@@ -83,30 +78,20 @@ Return JSON with exactly these fields:
 Only report patterns you can actually support from the data given — do not invent cases or figures not present in the input.`;
 
   try {
-    const data = await callGemini({
-      model: GEMINI_MODEL,
-      apiKey: process.env.GEMINI_API_KEY,
-      prompt,
-      maxOutputTokens: 1600,
-    });
-
-    const textPart = data.candidates?.[0]?.content?.parts?.find((p) => p.text);
-    if (!textPart) {
-      console.error('Unexpected Gemini response shape:', JSON.stringify(data));
-      return res.status(502).json({ error: 'No text response from model' });
-    }
+    // Generous budget: GPT-6 models spend part of it on hidden reasoning before the JSON answer.
+    const text = await callOpenAI({ prompt, maxOutputTokens: 8000 });
 
     let parsed;
     try {
-      const cleaned = textPart.text.replace(/```json|```/g, '').trim();
+      const cleaned = text.replace(/```json|```/g, '').trim();
       parsed = JSON.parse(cleaned);
     } catch (e) {
       try {
-        const match = textPart.text.match(/\{[\s\S]*\}/);
+        const match = text.match(/\{[\s\S]*\}/);
         if (!match) throw e;
         parsed = JSON.parse(match[0]);
       } catch (e2) {
-        console.error('Failed to parse model JSON (insights):', textPart.text);
+        console.error('Failed to parse model JSON (insights):', text);
         return res.status(502).json({ error: 'Malformed AI response' });
       }
     }
@@ -121,10 +106,8 @@ Only report patterns you can actually support from the data given — do not inv
     return res.status(200).json(parsed);
   } catch (err) {
     if (err.status) {
-      console.error('Gemini API error (insights):', err.status, err.body);
-      const message = err.status === 503
-        ? 'AI service is temporarily overloaded — please try again shortly.'
-        : 'AI insight generation failed';
+      console.error('OpenAI API error (insights):', err.status, err.body);
+      const message = err.message || 'AI insight generation failed';
       return res.status(502).json({ error: message });
     }
     console.error('Insights endpoint error:', err);
